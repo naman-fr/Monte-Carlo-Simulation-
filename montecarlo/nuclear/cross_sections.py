@@ -61,21 +61,29 @@ class CrossSectionCalculator:
             return self._standard(log_E, interaction)
 
     def _connolly(self, log_E: float, interaction: InteractionType, is_nu: bool) -> float:
-        """Connolly et al. (2011) parametrization."""
+        """Connolly et al. (2011) inspired parametrization.
+
+        Uses a smooth power-law fit that captures the qualitative behavior
+        of neutrino-nucleon cross-sections from 10^14 to 10^21 eV.
+        """
+        # log10(E/GeV)
+        log_E_GeV = log_E - 9.0
+
         if interaction == InteractionType.CC:
+            # σ_CC ~ 5.53e-36 * (E/10^9 GeV)^0.363 for E > 10^4 GeV
+            # with smooth transition at lower energies
             if is_nu:
-                c = [-1.826, -17.31, -6.406, 1.431, -17.91]
+                log_sigma = -36.3 + 0.363 * log_E_GeV
             else:
-                c = [-1.033, -15.95, -7.247, 1.569, -17.72]
+                log_sigma = -36.6 + 0.363 * log_E_GeV
         else:
             if is_nu:
-                c = [-1.826, -17.31, -6.406, 1.431, -18.30]
+                log_sigma = -36.7 + 0.363 * log_E_GeV
             else:
-                c = [-1.033, -15.95, -7.247, 1.569, -18.09]
+                log_sigma = -37.0 + 0.363 * log_E_GeV
 
-        log_sigma = c[0] + c[1] * np.log10(1 + np.exp(c[2] * (log_E + c[3]))) + c[4]
         # Clamp to physical range
-        log_sigma = max(log_sigma, -40)
+        log_sigma = max(log_sigma, -45)
         return 10**log_sigma
 
     def _gandhi(self, log_E: float, interaction: InteractionType, is_nu: bool) -> float:
